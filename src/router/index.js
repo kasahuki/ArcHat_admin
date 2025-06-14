@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Dashboard from '../views/Dashboard.vue'
 import User from '../views/User.vue'
-import Group from '../views/Group.vue'
 import Message from '../views/Message.vue'
-import GroupMessage from '../views/message/GroupMessage.vue'
-import PersonalMessage from '../views/message/PersonalMessage.vue'
 import Settings from '../views/Settings.vue'
+import Login from '@/views/Login.vue'
+import Friendship from '../views/Friendship.vue'
+import GroupConversation from '../views/conversation/GroupConversation.vue'
+import PrivateConversation from '../views/conversation/PrivateConversation.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,26 +21,30 @@ const router = createRouter({
           component: User
         },
         {
-          path: 'group',
-          name: 'group',
-          component: Group
+          path: 'friendship',
+          name: 'friendship',
+          component: Friendship
+        },
+        {
+          path: 'conversation',
+          name: 'conversation',
+          children: [
+            {
+              path: 'group',
+              name: 'group-conversation',
+              component: GroupConversation
+            },
+            {
+              path: 'private',
+              name: 'private-conversation',
+              component: PrivateConversation
+            }
+          ]
         },
         {
           path: 'message',
           name: 'message',
-          component: Message,
-          children: [
-            {
-              path: 'group',
-              name: 'group-message',
-              component: GroupMessage
-            },
-            {
-              path: 'personal',
-              name: 'personal-message',
-              component: PersonalMessage
-            }
-          ]
+          component: Message
         },
         {
           path: 'settings',
@@ -47,6 +52,16 @@ const router = createRouter({
           component: Settings
         }
       ]
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: Login
+    },
+    // 404页面
+    {
+      path: '/:pathMatch(.*)*',
+      component: () => import('@/views/404NotFound.vue')
     }
   ]
 })

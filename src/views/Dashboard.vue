@@ -15,8 +15,8 @@
         </el-badge>
         <el-dropdown @command="handleCommand">
           <div class="user-profile">
-            <el-avatar :size="32" src="https://via.placeholder.com/32?text=DK"></el-avatar>
-            <span class="username">Admin</span>
+            <el-avatar :size="32" :src="userInfo.avatar"></el-avatar>
+            <span class="username">{{ userInfo.username }}</span>
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </div>
           <template #dropdown>
@@ -48,25 +48,30 @@
             <span>用户管理</span>
           </el-menu-item>
           
-          <el-menu-item index="/group" class="menu-item">
-            <el-icon><UserFilled /></el-icon>
-            <span>群组管理</span>
+          <el-menu-item index="/friendship" class="menu-item">
+            <el-icon><Connection /></el-icon>
+            <span>好友关系管理</span>
           </el-menu-item>
           
-          <el-sub-menu index="/message" class="menu-item">
+          <el-sub-menu index="/conversation" class="menu-item">
             <template #title>
               <el-icon><ChatDotRound /></el-icon>
-              <span>消息管理</span>
+              <span>会话管理</span>
             </template>
-            <el-menu-item index="/message/group">
+            <el-menu-item index="/conversation/group">
               <el-icon><ChatLineRound /></el-icon>
-              <span>群组消息</span>
+              <span>群聊会话</span>
             </el-menu-item>
-            <el-menu-item index="/message/personal">
+            <el-menu-item index="/conversation/private">
               <el-icon><ChatDotSquare /></el-icon>
-              <span>个人消息</span>
+              <span>私聊会话</span>
             </el-menu-item>
           </el-sub-menu>
+
+          <el-menu-item index="/message" class="menu-item">
+            <el-icon><Message /></el-icon>
+            <span>消息管理</span>
+          </el-menu-item>
           
           <el-menu-item index="/settings" class="menu-item">
             <el-icon><Setting /></el-icon>
@@ -86,6 +91,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useUserInfoStore } from '@/stores/user' 
 import {
   Bell,
   User,
@@ -95,13 +101,19 @@ import {
   ArrowDown,
   SwitchButton,
   ChatLineRound,
-  ChatDotSquare
+  ChatDotSquare,
+  Connection,
+  Message
 } from '@element-plus/icons-vue';
 import { ElMessageBox } from 'element-plus';
+
+import { logoutService } from '@/api/user';
 
 const route = useRoute();
 const router = useRouter();
 const activeMenu = computed(() => route.path);
+const userInfoStore = useUserInfoStore();
+const userInfo = computed(() => userInfoStore.userInfo);
 
 // 获取当前日期
 const currentDate = computed(() => {
@@ -127,9 +139,15 @@ const handleCommand = (command) => {
         type: 'warning',
       }
     )
-      .then(() => {
-        // 这里添加退出登录的逻辑
-        console.log('用户退出系统');
+      .then(async () => {
+        // 清除用户登录状态
+        
+        const token = userInfoStore.userInfo.token
+        let res = await logoutService(token);
+
+        userInfoStore.removeUserInfo()
+        // 跳转到登录页面
+        router.push('/login');
       })
       .catch(() => {
         // 取消退出
@@ -147,24 +165,35 @@ const handleCommand = (command) => {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f5f7fa;
+  background-color: #d8d7d76c;
+
+  background-size: cover;
+  background-attachment: fixed;
+  transition: all 0.3s ease;
 }
 
 .pocket-planner {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
 }
 
 /* 顶部导航栏 */
 .app-header {
-  background: white;
-  border-bottom: 1px solid #e4e7ed;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 24px;
   height: 64px;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .header-left {
@@ -174,9 +203,13 @@ body {
 }
 
 .app-title {
-  font-size: 20px;
+  font-size: 32px;
   font-weight: 600;
-  color: #303133;
+  background: linear-gradient(45deg, #7F7FD5, #163672, #35404b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.3s ease;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .current-date {
@@ -195,13 +228,21 @@ body {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  padding: 6px 16px;
+  border-radius: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .user-profile:hover {
-  background-color: #f5f7fa;
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+              0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .username {
@@ -217,34 +258,113 @@ body {
 
 /* 侧边栏 */
 .sidebar {
-  background: #f8f9fa;
-  border-right: 1px solid #e4e7ed;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 2px 0 4px rgba(255, 255, 255, 0.5),
+              inset -2px 0 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .sidebar-menu {
   border-right: none;
   background: transparent;
+  padding: 16px;
 }
 
 .menu-item {
-  margin: 4px 12px;
-  border-radius: 8px;
+  margin: 6px 12px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* 主内容区 */
-.main-content {
-  padding: 24px;
-  overflow-y: auto;
+.menu-item:hover {
+  background: rgba(127, 127, 213, 0.15);
+  transform: translateX(4px);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+              0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-menu-item.is-active) {
+  background: linear-gradient(45deg, #7F7FD5, #86A8E7, #91EAE4);
+  color: white;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateX(4px);
+}
+
+:deep(.el-menu-item.is-active::before) {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: white;
+  border-radius: 0 4px 4px 0;
+}
+
+:deep(.el-sub-menu__title:hover) {
+  background: rgba(127, 127, 213, 0.15);
+  transform: translateX(4px);
+}
+
+:deep(.el-sub-menu.is-active .el-sub-menu__title) {
+  color: #7F7FD5;
+  font-weight: 600;
+}
+
+/* 通知按钮 */
+.notification-badge :deep(.el-button) {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notification-badge :deep(.el-button:hover) {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+              0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 下拉菜单样式 */
-.el-dropdown-menu__item {
+:deep(.el-dropdown-menu) {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+              0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+:deep(.el-dropdown-menu__item) {
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px;
+  margin: 2px 0;
 }
 
-.el-dropdown-menu__item .el-icon {
-  margin-right: 4px;
+:deep(.el-dropdown-menu__item:hover) {
+  background: rgba(127, 127, 213, 0.15);
+  color: #7F7FD5;
+  transform: translateX(4px);
 }
+
+
 </style>
